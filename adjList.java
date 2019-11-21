@@ -1,4 +1,5 @@
 import java.io.IOException;
+import java.util.HashSet;
 import org.apache.hadoop.mapreduce.lib.jobcontrol.JobControl;
 import java.util.StringTokenizer;
 import java. util. Iterator;
@@ -70,11 +71,13 @@ public class adjList {
             int cntr = 0;
             String adjlst = new String("");
             String c ="";
+	    HashSet<String> h = new HashSet<String>();
             for (Text val : values)
             {
+		h.add(val.toString());
                 adjlst = adjlst+","+val.toString();
-                cntr++;
             }
+	    cntr=h.size();
             adjlst = adjlst.substring(1);
             if(cntr>count_max){
                 count_max=cntr;
@@ -90,6 +93,7 @@ public class adjList {
         }
 	@Override
 	protected void cleanup(Context context) throws IOException, InterruptedException {
+            context.write(new Text("The longest Adjacency List is: "),new Text(""));
 	context.write(temp_key, result);
 	context.write(temp_key, result_max);
 	context.write(temp_key_min, result_min);
@@ -111,10 +115,12 @@ public class adjList {
             int cntr = 0;
             String adjlst = new String("");
             String c = "";
+		HashSet<String> h = new HashSet<String>();
             for (Text val : values) {
+		h.add(val.toString());
                 adjlst = adjlst + "," + val.toString();
-                cntr++;
             }
+	    cntr=h.size();
             adjlst = adjlst.substring(1);
         
 	if(cntr>count_max){
@@ -132,6 +138,7 @@ public class adjList {
 	}
 	@Override
 	protected void cleanup(Context context) throws IOException, InterruptedException {
+        context.write(new Text("The longest Adjacency list is: "),new Text(""));
 	context.write(temp_key, result);
 	context.write(temp_key, result_max);
 	context.write(temp_key_min, result_min);
