@@ -1,0 +1,284 @@
+Data is cleaned for 10 years individually using the commands given by professor in Temp_test.html and then the RDD of each year is saved and then merged using UNION command.
+
+DATA CLEAN COMMAND: 
+
+>>>file_path = “/data/weather/2010”
+>>>inTextData = spark.read.format("csv").option("header", "true").option("delimiter","\t").load(file_path)
+>>>name_list = inTextData.schema.names
+>>>name_list = str(name_list).strip("['']").split(' ')
+>>>names = []
+>>>for item in name_list:
+    if len(item)>0:
+        names.append(item)
+>>>rdd1 = inTextData.rdd
+>>>rdd2 = rdd1.map(lambda x: str(x).split('=')[1])
+>>>rdd3 = rdd2.map(lambda x: ' '.join(x.split()))
+>>>rdd4 = rdd3.map(lambda x: x[2:-2])
+>>> rdd5 = rdd4.map(lambda x: str(x).replace('*',''))
+>>> rdd5.saveAsTextFile("/tmp/teja/spark/2010")
+
+The above command is repeated 10 times for all years and RDD data for each year is saved.
+
+Below is the location of saved rdd data for each year: 
+
+/tmp/chinthsy/sparkData/2010
+/tmp/chinthsy/sparkData/2011
+/tmp/chinthsy/sparkData/2012
+/tmp/chinthsy/sparkData/2013
+/tmp/chinthsy/sparkData/2014
+/tmp/chinthsy/sparkData/2015
+/tmp/chinthsy/sparkData/2016
+/tmp/chinthsy/sparkData/2017
+/tmp/chinthsy/sparkData/2018
+/tmp/chinthsy/sparkData/2019
+
+Now each rdd is read and total merge is done:
+
+>>>df2010=spark.read.csv('/tmp/chinthsy/sparkData/2010',header=False,sep=' ')
+>>>df2011=spark.read.csv('/tmp/chinthsy/sparkData/2011',header=False,sep=' ')
+>>>df2012=spark.read.csv('/tmp/chinthsy/sparkData/2012',header=False,sep=' ')  
+>>>df2013=spark.read.csv('/tmp/chinthsy/sparkData/2013',header=False,sep=' ')  
+>>>df2014=spark.read.csv('/tmp/chinthsy/sparkData/2014',header=False,sep=' ')  
+>>>df2015=spark.read.csv('/tmp/chinthsy/sparkData/2015',header=False,sep=' ')  
+>>>df2016=spark.read.csv('/tmp/chinthsy/sparkData/2016',header=False,sep=' ')  
+>>>df2017=spark.read.csv('/tmp/chinthsy/sparkData/2017',header=False,sep=' ')  
+>>>df2018=spark.read.csv('/tmp/chinthsy/sparkData/2018',header=False,sep=' ')  
+>>>df2019=spark.read.csv('/tmp/chinthsy/sparkData/2019',header=False,sep=' ')  
+>>>df11=df2010.union(df2011)
+>>>df12=df11.union(df2012)
+>>>df13=df12.union(df2013)
+>>>df14=df13.union(df2014)
+>>>df15=df14.union(df2015)
+>>>df16=df15.union(df2016)
+>>>df17=df16.union(df2017)
+>>>df18=df17.union(df2018)
+>>>df19=df18.union(df2019)
+
+-->Used commands given by professor to clean the data:
+
+>>>cleanData = df19.drop('_c1','_c4','_c6','_c8','_c10','_c12','_c14')
+>>>cleanData = cleanData.withColumnRenamed('_c0','STN').withColumnRenamed('_c2','YEARMODA')\
+                    .withColumnRenamed('_c3','TEMP').withColumnRenamed('_c5','DEWP')\
+                    .withColumnRenamed('_c7','SLP').withColumnRenamed('_c9','STP')\
+                    .withColumnRenamed('_c11','VISIB').withColumnRenamed('_c13','WDSP')\
+                    .withColumnRenamed('_c15','MXSPD').withColumnRenamed('_c16','GUST')\
+                    .withColumnRenamed('_c17','MAX').withColumnRenamed('_c18','MIN')\
+                    .withColumnRenamed('_c19','PRCP').withColumnRenamed('_c20','SNDP')\
+                    .withColumnRenamed('_c21','FRSHTT')
+
+
+-----------------------------------------------------------------------Question 1-----------------------------------------------------------------------
+
+>>>MaxClean = cleanData.filter(cleanData.MAX != 9999.9)
+>>>MaxClean_Float = MaxClean.select(MaxClean.MAX.cast('float').alias('MAX'), MaxClean.STN, >>>MaxClean.YEARMODA)
+>>>MaxClean_Float.createOrReplaceTempView("MaxTable")
+
+>>>MinClean = cleanData.filter(cleanData.MIN != 9999.9)
+>>>MinClean_Float = MinClean.select(MinClean.MAX.cast('float').alias('MAX'), MinClean.STN, MinClean.YEARMODA)
+>>>MinClean_Float.createOrReplaceTempView("MinTable")
+
+Now calculate Min and max for each year: 
+
+Max Temp 2010:
+>>> MaxT = spark.sql("select * from MaxTable where MAX=(select MAX(MAX) from MaxTable where YEARMODA like ‘2010%’)")
+>>> MaxT.show()
+
+Min Temp 2010
+>>> MinT = spark.sql("select * from MinTemp where MIN=(select MIN(MIN) from MinTemp where YEARMODA like ‘2010%’)")
+>>> MinT.show()
+
+Max Temp 2011:
+>>> MaxT = spark.sql("select * from MaxTable where MAX=(select MAX(MAX) from MaxTable where YEARMODA like ‘2011%’)")
+>>> MaxT.show()
+
+Min Temp 2011
+>>> MinT = spark.sql("select * from MinTable where MIN=(select MIN(MIN) from MinTemp where YEARMODA like ‘2011%’)")
+>>> MinT.show()
+
+
+Max Temp 2012:
+>>> MaxT = spark.sql("select * from MaxTable where MAX=(select MAX(MAX) from MaxTable where YEARMODA like ‘2012%’)")
+>>> MaxT.show()
+
+Min Temp 2012
+>>> MinT = spark.sql("select * from MinTable where MIN=(select MIN(MIN) from MinTemp where YEARMODA like ‘2012%’)")
+>>> MinT.show()
+
+
+Max Temp 2013
+>>> MaxT = spark.sql("select * from MaxTable where MAX=(select MAX(MAX) from MaxTable where YEARMODA like ‘2013%’)")
+>>> MaxT.show()
+
+Min Temp 2013
+>>> MinT = spark.sql("select * from MinTable where MIN=(select MIN(MIN) from MinTemp where YEARMODA like ‘2013%’)")
+>>> MinT.show()
+
+
+Max Temp 2014:
+>>> MaxT = spark.sql("select * from MaxTable where MAX=(select MAX(MAX) from MaxTable where YEARMODA like ‘2014%’)")
+>>> MaxT.show()
+
+Min Temp 2014
+>>> MinT = spark.sql("select * from MinTable where MIN=(select MIN(MIN) from MinTemp where YEARMODA like ‘2014%’)")
+>>> MinT.show()
+
+
+Max Temp 2015:
+>>> MaxT = spark.sql("select * from MaxTable where MAX=(select MAX(MAX) from MaxTable where YEARMODA like ‘2015%’)")
+>>> MaxT.show()
+
+Min Temp 2015
+>>> MinT = spark.sql("select * from MinTable where MIN=(select MIN(MIN) from MinTemp where YEARMODA like ‘2015%’)")
+>>> MinT.show()
+
+
+Max Temp 2016:
+>>> MaxT = spark.sql("select * from MaxTable where MAX=(select MAX(MAX) from MaxTable where YEARMODA like ‘2016%’)")
+>>> MaxT.show()
+
+Min Temp 2016
+>>> MinT = spark.sql("select * from MinTable where MIN=(select MIN(MIN) from MinTemp where YEARMODA like ‘2016%’)")
+>>> MinT.show()
+
+
+Max Temp 2017:
+>>> MaxT = spark.sql("select * from MaxTable where MAX=(select MAX(MAX) from MaxTable where YEARMODA like ‘2017%’)")
+>>> MaxT.show()
+
+Min Temp 2017
+>>> MinT = spark.sql("select * from MinTable where MIN=(select MIN(MIN) from MinTemp where YEARMODA like ‘2017%’)")
+>>> MinT.show()
+
+
+Max Temp 2018:
+>>> MaxT = spark.sql("select * from MaxTable where MAX=(select MAX(MAX) from MaxTable where YEARMODA like ‘2018%’)")
+>>> MaxT.show()
+
+Min Temp 2018
+>>> MinT = spark.sql("select * from MinTable where MIN=(select MIN(MIN) from MinTemp where YEARMODA like ‘2018%’)")
+>>> MinT.show()
+
+Max Temp 2019:
+>>> MaxT = spark.sql("select * from MaxTable where MAX=(select MAX(MAX) from MaxTable where YEARMODA like ‘2019%’)")
+>>> MaxT.show()
+
+Min Temp 2019
+>>> MinT = spark.sql("select * from MinTable where MIN=(select MIN(MIN) from MinTemp where YEARMODA like ‘2019%’)")
+>>> MinT.show()
+
+-----------------------------------------------------------------------Question 2-----------------------------------------------------------------------
+
+
+For Max Temp in all years: 
+
+>>>MaxClean = cleanData.filter(cleanData.MAX != 9999.9)
+>>>MaxClean_Float = MaxClean.select(MaxClean.MAX.cast('float').alias('MAX'), MaxClean.STN, >>>MaxClean.YEARMODA)
+>>>MaxClean_Float.createOrReplaceTempView("MaxTable")
+>>> MaxT = spark.sql("select * from MaxTable where MAX=(select MAX(MAX) from MaxTable)")
+>>> MaxT.show()
+
+For Min Temp in all years: 
+
+>>>MinClean = cleanData.filter(cleanData.MIN != 9999.9)
+>>>MinClean_Float = MinClean.select(MinClean.MAX.cast('float').alias('MAX'), MinClean.STN, MinClean.YEARMODA)
+>>>MinClean_Float.createOrReplaceTempView("MinTable")
+>>> MinT = spark.sql("select * from MinTemp where MIN=(select MIN(MIN) from MinTemp)")
+>>> MinT.show()
+
+-----------------------------------------------------------------------Question 3-----------------------------------------------------------------------
+
+file_path = "/data/weather/2015"                                           
+>>> inTextData = spark.read.format("csv").option("header", "true").option("delimiter","\t").load(file_path)
+>>> rdd1 = inTextData.rdd                                                       
+>>> rdd2 = rdd1.map(lambda x: str(x).split('=')[1])
+>>> rdd3 = rdd2.map(lambda x: ' '.join(x.split()))
+>>> rdd4 = rdd3.map(lambda x: x[1:-2])
+>>> rdd5 = rdd4.map(lambda x: str(x).replace('*',''))
+>>> rdd6 = rdd5.map(lambda x: str(x).replace('G',''))
+>>> rdd7 = rdd6.map(lambda x: str(x).replace('I',''))
+>>> rdd8 = rdd7.map(lambda x: str(x).replace('A',''))
+>>> rdd9 = rdd8.map(lambda x: str(x).replace('B',''))
+>>> rdd10 = rdd9.map(lambda x: str(x).replace('C',''))
+>>> rdd11 = rdd10.map(lambda x: str(x).replace('D',''))
+>>> rdd12 = rdd11.map(lambda x: str(x).replace('E',''))
+>>> rdd13 = rdd12.map(lambda x: str(x).replace('F',''))
+>>> rdd14 = rdd13.map(lambda x: str(x).replace('F',''))
+>>> rdd15 = rdd14.map(lambda x: str(x).replace('H',''))
+
+>>> rdd15.saveAsTextFile("/tmp/teja/spark2/2015")
+>>> newInData = spark.read.csv("/tmp/teja/spark2/2015",header=False,sep=' ')           
+>>> cleanData = newInData.drop('_c1','_c4','_c6','_c8','_c10','_c12','_c14')    
+>>> cleanData = cleanData.withColumnRenamed('_c0','STN').withColumnRenamed('_c2','YEARMODA')\
+...                     .withColumnRenamed('_c3','TEMP').withColumnRenamed('_c5','DEWP')\
+...                     .withColumnRenamed('_c7','SLP').withColumnRenamed('_c9','STP')\
+...                     .withColumnRenamed('_c11','VISIB').withColumnRenamed('_c13','WDSP')\
+...                     .withColumnRenamed('_c15','MXSPD').withColumnRenamed('_c16','GUST')\
+...                     .withColumnRenamed('_c17','MAX').withColumnRenamed('_c18','MIN')\
+...                     .withColumnRenamed('_c19','PRCP').withColumnRenamed('_c20','SNDP')\
+...                     .withColumnRenamed('_c21','FRSHTT')
+>>> clean_prcp = cleanData.filter(cleanData.PRCP!= 99.99)
+>>> PrcpData_float = clean_prcp.select(clean_prcp.PRCP.cast('float').alias('PRCP'), clean_prcp.STN, clean_prcp.YEARMODA)
+>>> PrcpData_float.createOrReplaceTempView("TablePRCP")
+
+Max PCPT for 2015: 
+
+>>> MaxPRCP = spark.sql("select * from TablePRCP where PRCP=(select MAX(PRCP) from TablePRCP))")
+>>> MaxPRCP = spark.sql("select * from TablePRCP where PRCP=(select MAX(PRCP) from TablePRCP)")
+>>> MaxPRCP.show()
+
+Min PCPT for 2015: 
+
+>>> MinPRCP = spark.sql("select * from TablePRCP where PRCP=(select MIN(PRCP) from TablePRCP)")
+>>> MinPRCP.show()
+
+-----------------------------------------------------------------------Question 4-----------------------------------------------------------------------
+
+>>> df2019=spark.read.csv('/tmp/chinthsy/sparkData/2019',header=False,sep=' ')  
+>>> file_path = "/data/weather/2019"               
+>>> inTextData = spark.read.format("csv").option("header", "true").option("delimiter","\t").load(file_path)
+19/12/03 18:09:46 WARN SharedInMemoryCache: Evicting cached table partition metadata from memory due to size constraints (spark.sql.hive.filesourcePartitionFileCacheSize = 262144000 bytes). This may impact query planning performance.
+>>> name_list = inTextData.schema.names                                          
+>>> rdd1 = inTextData.rdd
+>>> rdd2 = rdd1.map(lambda x: str(x).split('=')[1])
+>>> rdd3 = rdd2.map(lambda x: ' '.join(x.split()))
+>>> rdd4 = rdd3.map(lambda x: x[2:-2])
+>>> rdd5 = rdd4.map(lambda x: str(x).replace('*',''))
+>>> rdd5.saveAsTextFile("/tmp/teja/spark2/2019S")
+>>> newInData = spark.read.csv('/tmp/teja/spark2/2019S',header=False,sep=' ')
+>>> cleanData = newInData.drop('_c1','_c4','_c6','_c8','_c10','_c12','_c14')    
+>>> cleanData = cleanData.withColumnRenamed('_c0','STN').withColumnRenamed('_c2','YEARMODA')\
+...                     .withColumnRenamed('_c3','TEMP').withColumnRenamed('_c5','DEWP')\
+...                     .withColumnRenamed('_c7','SLP').withColumnRenamed('_c9','STP')\
+...                     .withColumnRenamed('_c11','VISIB').withColumnRenamed('_c13','WDSP')\
+...                     .withColumnRenamed('_c15','MXSPD').withColumnRenamed('_c16','GUST')\
+...                     .withColumnRenamed('_c17','MAX').withColumnRenamed('_c18','MIN')\
+...                     .withColumnRenamed('_c19','PRCP').withColumnRenamed('_c20','SNDP')\
+...                     .withColumnRenamed('_c21','FRSHTT')
+
+----Finding percentage of missing STP in 2019:
+
+>>> cleanData.createOrReplaceTempView("TableSTP1")
+>>> STPCountMissing = spark.sql("select count(1) from TableSTP1 where STP = 9999.9")
+>>> STPCount = spark.sql("select count(1) from TableSTP1")
+>>> total=STPCount.collect()[0][0]
+>>> missing=STPCountMissing.collect()[0][0]
+>>> p=100 * float(missing)/float(total)
+>>> print(p)
+
+----Finding Precentage of missing Stations in 2019:
+
+>>> cleanData.createOrReplaceTempView("TableStation")
+>>> STNCountMissing = spark.sql("select count(1) from TableStation where STN = 999999")
+>>> STNCount = spark.sql("select count(1) from TableStation")
+>>> STNtotal=STNCount.collect()[0][0]
+>>> STNMissing=STNCountMissing.collect()[0][0]                             
+>>> percentage=100 * float(STNMissing)/float(STNtotal)                                  
+>>> print(percentage)
+
+
+-----------------------------------------------------------------------Question 5-----------------------------------------------------------------------
+
+>>> clean_Gust = cleanData.filter(cleanData.GUST!= 999.9)
+>>> GustData_float = clean_Gust.select(clean_Gust.GUST.cast('float').alias('GUST'), clean_Gust.STN, clean_Gust.YEARMODA)
+>>> GustData_float.createOrReplaceTempView("TableG")
+>>> MaxGust = spark.sql("select * from TableG where GUST=(select MAX(GUST) from TableG )")
